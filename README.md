@@ -503,6 +503,8 @@ pytest tests/
 - [ECharts](https://echarts.apache.org/) - 图表库
 - [Docker](https://www.docker.com/) - 容器化平台
 
+- 感谢 [chatgpt](https://chat.openai.com/)、[deepseek](https://chat.deepseek.com/)、[cursor](https://www.cursor.com/) 对本项目的大力支持！
+
 ---
 
 **注意**：请确保在生产环境中修改默认的用户名、密码和密钥，并启用适当的安全措施。 
