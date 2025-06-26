@@ -30,12 +30,12 @@
 
 ### 最低要求
 - Python 3.8+
-- 2GB RAM
+- 1GB RAM
 - 1GB 可用磁盘空间
 
 ### 推荐配置
 - Python 3.11+
-- 4GB RAM
+- 2GB RAM
 - 5GB 可用磁盘空间
 - Docker 20.10+
 
@@ -45,18 +45,13 @@
 
 1. **克隆项目**
 ```bash
-git clone <repository-url>
+git clone https://github.com/beiminghaoze/Nginx-Log-Dashboard
 cd nginx-log-dashboard
 ```
 
 2. **准备日志目录**
 ```bash
-# 创建日志目录结构
-mkdir -p logs/nas logs/nasqb
-
-# 复制你的nginx日志文件
-cp /path/to/your/nas/*.log logs/nas/
-cp /path/to/your/nasqb/*.log logs/nasqb/
+在linux上nginx的默认日志路径为 /var/log/nginx
 ```
 
 3. **启动服务**
@@ -91,9 +86,10 @@ docker images | grep nginx-log-dashboard
 ```bash
 docker run -d \
   --name nginx-log-dashboard \
+  --restart=always \
   -p 5000:5000 \
-  -v /path/to/your/nas/logs:/var/log/nginx/nas:ro \
-  -v /path/to/your/nasqb/logs:/var/log/nginx/nasqb:ro \
+  -v /var/log/nginx:/var/log/nginx/:ro \
+  -v /var/log/nginxs/test:/var/log/nginx/test:ro \
   nginx-log-dashboard
 ```
 
@@ -157,10 +153,10 @@ pip install -r requirements.txt
 编辑 `parser.py` 文件，修改日志目录配置：
 
 ```python
-# 本地开发环境配置
+# 本地开发环境配置(实例，以实际为准。)
 LOG_DIRS = {
-    'nas': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx',
-    'nasqb': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx'
+    'nginx': './log/nginx-log/',
+    'test': './log/nginx-log/test/',
 }
 ```
 
@@ -184,8 +180,8 @@ flask run --host=0.0.0.0 --port=5000
 
 ```python
 LOG_DIRS = {
-    'nas': '/var/log/nginx/nas',      # NAS服务器日志
-    'nasqb': '/var/log/nginx/nasqb'   # NASQB服务器日志
+    'nginx': '/var/log/nginx/nas',     
+    'nginxtext': '/var/log/nginx/text'   
 }
 ```
 
@@ -416,9 +412,8 @@ nginx-log-dashboard/
 │   └── login.html        # 登录页面
 ├── static/               # 静态文件
 │   └── favicon.ico       # 网站图标
-└── logs/                 # 日志目录（本地开发）
-    ├── nas/              # NAS日志文件
-    └── nasqb/            # NASQB日志文件
+└── nginx-log/                 # 日志目录（本地开发）
+
 ```
 
 ### 开发环境设置
@@ -469,21 +464,17 @@ pytest tests/
 
 ## 📝 更新日志
 
-### v1.2.0 (2023-12-25)
+### v1.0.0 (2025-6-26)
+- 🎉 初始版本发布
 - ✨ 支持多日志源配置
 - 🚀 移除天数限制，只分析最新access.log文件
 - 🎨 简化Web界面，移除天数选择控件
 - 📚 完善文档和示例
 - 🐳 优化Docker配置
-
-### v1.1.0 (2023-12-20)
 - 🔍 添加实时日志查看功能
 - 📊 优化图表显示效果
 - 🔐 添加用户认证功能
 - 📱 改进移动端体验
-
-### v1.0.0 (2023-12-15)
-- 🎉 初始版本发布
 - 📈 基础统计分析功能
 - 🐳 Docker支持
 - 📋 基本Web界面
