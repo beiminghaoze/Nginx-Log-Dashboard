@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  nginx-log-dashboard:
+    build: .
+    container_name: nginx-log-dashboard
+    ports:
+      - "5000:5000"
+    volumes:
+      # 映射nas日志目录
+      - ./logs/nas:/var/log/nginx/nas:ro
+      # 映射nasqb日志目录
+      - ./logs/nasqb:/var/log/nginx/nasqb:ro
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      - nginx-dashboard-network
+
+networks:
+  nginx-dashboard-network:
+    driver: bridge 

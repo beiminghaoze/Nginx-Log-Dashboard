@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Nginx Log Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        #sidebar {
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            height: 100vh;
+            position: fixed;
+            padding: 20px;
+            width: 250px;
+        }
+        #main {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .chart {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            padding: 20px;
+            height: 460px;
+        }
+        .log-item {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .log-item:hover {
+            background-color: #e9ecef;
+        }
+        .log-item.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .loading {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+            display: none;
+            height: 1.5em;
+        }
+        .chart-container {
+            position: relative;
+        }
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: #495057;
+        }
+        .controls {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: none;
+            z-index: 1000;
+        }
+        #tailBox {
+            margin: 0;
+            white-space: pre;
+            font-family: inherit;
+            overflow-x: auto;
+        }
+        .log-line {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .fullscreen-log {
+            display: flex;
+            flex-direction: column;
+            height: 100vh !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            z-index: 2000 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            background: rgba(20, 24, 28, 0.98) !important;
+            overflow: hidden !important;
+        }
+        .fullscreen-log .fullscreen-header {
+            flex: 0 0 56px;
+            height: 56px;
+            width: 100%;
+            background: rgba(30, 34, 40, 0.95);
+            color: #b9f6ca;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            border-bottom: 1px solid #222;
+        }
+        .fullscreen-log .fullscreen-header .fullscreen-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .fullscreen-log .fullscreen-header .fullscreen-shrink-btn {
+            background: none;
+            border: none;
+            color: #b9f6ca;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 6px 12px;
+            transition: background 0.2s;
+        }
+        .fullscreen-log .fullscreen-header .fullscreen-shrink-btn:hover {
+            background: #222;
+            color: #fff;
+        }
+        .fullscreen-log .card-body {
+            flex: 1 1 0;
+            min-height: 0;
+            height: 100% !important;
+            max-height: none !important;
+            background: #181c20 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            width: 100vw !important;
+            padding: 0 8px 0 8px !important;
+            overflow: auto !important;
+            font-size: 1.08rem;
+            color: #b9f6ca;
+        }
+        .fullscreen-log #tailBox {
+            font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Menlo', 'monospace';
+            font-size: 1.08rem;
+        }
+        /* 美化滚动条 */
+        .fullscreen-log .card-body::-webkit-scrollbar {
+            width: 8px;
+            background: #23272e;
+        }
+        .fullscreen-log .card-body::-webkit-scrollbar-thumb {
+            background: #444c56;
+            border-radius: 4px;
+        }
+        .fullscreen-log .card-body::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+        #fullscreenLogBtn { display: inline-block; }
+        #shrinkLogBtn { display: none; }
+        .fullscreen-log #fullscreenLogBtn { display: none; }
+        .fullscreen-log #shrinkLogBtn { display: inline-block; }
+        .fullscreen-log .card-header,
+        .fullscreen-log .nav-tabs {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h4 class="mb-4">Log Files</h4>
+        {% for p in prefixes %}
+            <div class="log-item" onclick="selectLog(this, '{{ p }}')">
+                <i class="bi bi-file-text me-2"></i>{{ p }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="main">
+        <div class="controls">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <h2 id="title" class="mb-0">选择日志</h2>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-secondary" onclick="refreshStats()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        刷新
+                    </button>
+                </div>
+                <div class="col-auto ms-2 d-flex align-items-center">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                        <label class="form-check-label" for="autoRefreshToggle">自动刷新</label>
+                    </div>
+                    <div class="loading" id="loadingSpinner">
+                        <div class="spinner-border text-primary" role="status" style="width:1.5em;height:1.5em;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col text-end">
+                    <a href="/logout" class="btn btn-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                        退出
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">Top IPs</div>
+                    <div id="ipChart" class="chart"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">Top URLs</div>
+                    <div id="urlChart" class="chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="card mt-4" id="logCard">
+                    <!-- 全屏美化头部 -->
+                    <div class="fullscreen-header" id="fullscreenHeader" style="display:none;">
+                        <span class="fullscreen-title"><i class="bi bi-list-ul me-2"></i>最近日志</span>
+                        <button class="fullscreen-shrink-btn" id="fullscreenShrinkBtn" title="收缩" onclick="toggleLogFullscreen()">
+                            <i class="bi bi-arrows-angle-contract"></i>
+                        </button>
+                    </div>
+                    <div class="card-header d-flex justify-content-between align-items-center" id="logCardHeader">
+                        <span><i class="bi bi-list-ul me-2"></i>最近日志</span>
+                        <div>
+                            <button class="btn btn-outline-secondary btn-sm" id="fullscreenLogBtn" title="全屏" onclick="toggleLogFullscreen()">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="logCardBody" style="background:#222;color:#b9f6ca;font-family:monospace;min-height:200px;max-height:400px;overflow:auto;transition:all 0.3s;">
+                        <pre id="tailBox" style="margin:0;white-space:pre-wrap;"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="copyToast">已复制到剪贴板</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5"></script>
+    <script>
+        let ipChart = echarts.init(document.getElementById('ipChart'));
+        let urlChart = echarts.init(document.getElementById('urlChart'));
+        let currentLogPrefix = null;
+        let logIsFullscreen = false;
+        let logLinesDefault = 200;
+        let logLinesFullscreen = 10000;
+
+        // 处理窗口大小变化
+        window.addEventListener('resize', function() {
+            ipChart.resize();
+            urlChart.resize();
+        });
+
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'inline-block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        function truncateIPv6(ip) {
+            if (ip.includes(':')) {
+                return ip.split(':').slice(0, 2).join(':') + '...';
+            }
+            return ip;
+        }
+
+        function selectLog(elem, prefix) {
+            document.querySelectorAll('.log-item').forEach(div => div.classList.remove('active'));
+            elem.classList.add('active');
+            document.getElementById('title').innerText = prefix;
+            currentLogPrefix = prefix;
+            fetchStats(prefix);
+            refreshTail();
+        }
+
+        function showToast() {
+            const toast = document.getElementById('copyToast');
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+
+        function copyToClipboard(text) {
+            try {
+                // 创建临时 textarea
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                
+                // 选择文本
+                textarea.select();
+                textarea.setSelectionRange(0, textarea.value.length);
+                
+                // 复制
+                document.execCommand('copy');
+                
+                // 清理
+                document.body.removeChild(textarea);
+                
+                showToast();
+            } catch(err) {
+                console.error('复制失败:', err);
+                alert('复制失败: ' + err);
+            }
+        }
+
+        function fetchStats(prefix) {
+            showLoading();
+            fetch(`/api/stats?file=${prefix}`)
+                .then(res => res.json())
+                .then(data => {
+                    const ipData = data.ip.map(i => ({
+                        name: truncateIPv6(i[0]),
+                        value: i[1],
+                        fullIp: i[0]
+                    }));
+
+                    ipChart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: function(params) {
+                                const data = params[0].data;
+                                return `IP: ${data.fullIp}<br/>Count: ${data.value}`;
+                            }
+                        },
+                        grid: {
+                            left: 40,
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ipData.map(i => i.name),
+                            axisLabel: {
+                                interval: 0,
+                                rotate: 30
+                            }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: 'Requests',
+                            nameLocation: 'middle',
+                            nameGap: 60,
+                            min: 0,
+                            max: function(value) {
+                                return Math.ceil(value.max * 1.5 / 100) * 100;
+                            }
+                        },
+                        series: [{
+                            type: 'bar',
+                            data: ipData,
+                            itemStyle: {
+                                color: '#0d6efd'
+                            },
+                            emphasis: {
+                                itemStyle: {
+                                    color: '#0b5ed7'
+                                }
+                            },
+                            label: {
+                                show: true,
+                                position: 'top'
+                            },
+                            cursor: 'pointer'
+                        }]
+                    });
+
+                    // 重新绑定点击事件
+                    ipChart.off('click'); // 先移除之前的事件绑定
+                    ipChart.on('click', function(params) {
+                        console.log('Chart clicked:', params); // 调试日志
+                        if (params.data && params.data.fullIp) {
+                            copyToClipboard(params.data.fullIp);
+                        }
+                    });
+
+                    urlChart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: function(params) {
+                                const data = params[0];
+                                return `${data.name}<br/>Count: ${data.value}`;
+                            }
+                        },
+                        grid: {
+                            top: 30,
+                            left: 60,
+                            right: '4%',
+                            bottom: 40,
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: data.url.map(u => u[0]),
+                            position: 'bottom',
+                            offset: 29,
+                            axisLabel: {
+                                interval: 0,
+                                rotate: 45,
+                                align: 'center',
+                                margin: 30,
+                                position: 'bottom',
+                                offset: 45,
+                                formatter: function(value) {
+                                    if (value.length > 15) {
+                                        return value.substring(0, 15) + '...';
+                                    }
+                                    return value;
+                                }
+                            }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: 'Requests',
+                            nameLocation: 'middle',
+                            nameGap: 60,
+                            min: 0,
+                            max: function(value) {
+                                return Math.ceil(value.max * 1.3 / 100) * 100;
+                            }
+                        },
+                        series: [{
+                            type: 'bar',
+                            data: data.url.map(u => u[1]),
+                            itemStyle: {
+                                color: '#198754'
+                            },
+                            label: {
+                                show: true,
+                                position: 'top'
+                            }
+                        }]
+                    });
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    hideLoading();
+                });
+        }
+
+        function refreshStats() {
+            const active = document.querySelector('.log-item.active');
+            if (active) {
+                fetchStats(active.innerText);
+            }
+        }
+
+        function refreshTail() {
+            if (!currentLogPrefix) return;
+            const lines = logIsFullscreen ? logLinesFullscreen : logLinesDefault;
+            fetch(`/api/tail?file=${currentLogPrefix}&lines=${lines}`)
+                .then(res => res.json())
+                .then(data => {
+                    const linesArr = (data.lines || []);
+                    // 渲染为每行一div，超长省略
+                    document.getElementById('tailBox').innerHTML = linesArr.map(line =>
+                        `<div class='log-line' title="${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
+                    ).join('');
+                });
+        }
+
+        // 自动刷新间隔（毫秒）
+        const REFRESH_INTERVAL = 5000; // 5秒
+
+        // 自动刷新定时器
+        let refreshTimer = null;
+
+        function startAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+            }
+            refreshTimer = setInterval(refreshStats, REFRESH_INTERVAL);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+        }
+
+        // 监听自动刷新开关
+        document.getElementById('autoRefreshToggle').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        // 初始化自动刷新
+        startAutoRefresh();
+
+        // 全屏切换逻辑
+        function toggleLogFullscreen() {
+            const card = document.getElementById('logCard');
+            const header = document.getElementById('logCardHeader');
+            const fsHeader = document.getElementById('fullscreenHeader');
+            if (!card.classList.contains('fullscreen-log')) {
+                card.classList.add('fullscreen-log');
+                header.style.display = 'none';
+                fsHeader.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                logIsFullscreen = true;
+                refreshTail();
+            } else {
+                card.classList.remove('fullscreen-log');
+                header.style.display = '';
+                fsHeader.style.display = 'none';
+                document.body.style.overflow = '';
+                logIsFullscreen = false;
+                refreshTail();
+            }
+        }
+
+        // 页面加载后自动选择第一个日志
+        window.addEventListener('DOMContentLoaded', function() {
+            var firstLog = document.querySelector('.log-item');
+            if (firstLog) {
+                firstLog.click();
+            }
+        });
+    </script>
+</body>
+</html>
