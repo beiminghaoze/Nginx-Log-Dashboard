@@ -3,13 +3,16 @@ from parser import parse_logs, list_log_prefixes, get_logs_by_prefix
 import os
 
 app = Flask(__name__, static_url_path='', static_folder='static')
-app.secret_key = 'CHANGE_THIS_SECRET'  # 改成你自己的密钥
+app.secret_key = '6A737944E841BF3BDEB34F8CF9CD561E559'  # 改成你自己的密钥
 
 USERNAME = 'admin'
 PASSWORD = 'password'
+REQUIRE_LOGIN = False  # 是否需要登录的开关，True=需要，False=不需要
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if not REQUIRE_LOGIN:
+        return redirect(url_for('index'))
     if request.method == 'POST':
         if request.form['username'] == USERNAME and request.form['password'] == PASSWORD:
             session['user'] = USERNAME
@@ -20,19 +23,21 @@ def login():
 
 @app.route('/logout')
 def logout():
+    if not REQUIRE_LOGIN:
+        return redirect(url_for('index'))
     session.pop('user', None)
     return redirect(url_for('login'))
 
 @app.route('/')
 def index():
-    if 'user' not in session:
+    if REQUIRE_LOGIN and 'user' not in session:
         return redirect(url_for('login'))
     prefixes = list_log_prefixes()
     return render_template('index.html', prefixes=prefixes)
 
 @app.route('/api/stats')
 def stats():
-    if 'user' not in session:
+    if REQUIRE_LOGIN and 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     prefix = request.args.get('file')
     if not prefix:
@@ -67,7 +72,7 @@ def tail_log_file(filepath, lines=20):
 
 @app.route('/api/tail')
 def api_tail():
-    if 'user' not in session:
+    if REQUIRE_LOGIN and 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     prefix = request.args.get('file')
     lines = int(request.args.get('lines', 10))
