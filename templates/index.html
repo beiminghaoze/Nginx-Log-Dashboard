@@ -273,7 +273,7 @@
         let currentLogPrefix = null;
         let logIsFullscreen = false;
         let logLinesDefault = 200;
-        let logLinesFullscreen = 10000;
+        let logLinesFullscreen = 1000;
 
         // 处理窗口大小变化
         window.addEventListener('resize', function() {
@@ -489,10 +489,12 @@
                 .then(res => res.json())
                 .then(data => {
                     const linesArr = (data.lines || []);
-                    // 渲染为每行一div，超长省略
                     document.getElementById('tailBox').innerHTML = linesArr.map(line =>
                         `<div class='log-line' title="${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
                     ).join('');
+                    // 自动滚动到底部
+                    const logBody = document.getElementById('logCardBody');
+                    logBody.scrollTop = logBody.scrollHeight;
                 });
         }
 
