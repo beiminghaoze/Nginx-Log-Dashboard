@@ -179,6 +179,18 @@
         .fullscreen-log .nav-tabs {
             display: none !important;
         }
+        /* 非全屏下最近日志更紧凑（高优先级） */
+        #logCard:not(.fullscreen-log) .card-body {
+            min-height: 32px !important;
+            max-height: 90px !important;
+            height: 90px !important;
+            padding: 2px 6px 2px 6px !important;
+            font-size: 0.80rem !important;
+            line-height: 1.2 !important;
+        }
+        #logCard:not(.fullscreen-log) #tailBox {
+            font-size: 0.80rem !important;
+        }
     </style>
 </head>
 <body>
@@ -272,8 +284,9 @@
         let urlChart = echarts.init(document.getElementById('urlChart'));
         let currentLogPrefix = null;
         let logIsFullscreen = false;
-        let logLinesDefault = 200;
+        let logLinesDefault = 5;
         let logLinesFullscreen = 1000;
+        let shouldScrollTailBottom = false;
 
         // 处理窗口大小变化
         window.addEventListener('resize', function() {
@@ -479,6 +492,7 @@
             const active = document.querySelector('.log-item.active');
             if (active) {
                 fetchStats(active.innerText);
+                refreshTail();
             }
         }
 
@@ -492,9 +506,13 @@
                     document.getElementById('tailBox').innerHTML = linesArr.map(line =>
                         `<div class='log-line' title="${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
                     ).join('');
-                    // 自动滚动到底部
-                    const logBody = document.getElementById('logCardBody');
-                    logBody.scrollTop = logBody.scrollHeight;
+                    if (shouldScrollTailBottom) {
+                        const tailBox = document.getElementById('tailBox');
+                        if (tailBox.lastElementChild) {
+                            tailBox.lastElementChild.scrollIntoView({ behavior: 'auto', block: 'end' });
+                        }
+                        shouldScrollTailBottom = false;
+                    }
                 });
         }
 
@@ -541,6 +559,7 @@
                 fsHeader.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
                 logIsFullscreen = true;
+                shouldScrollTailBottom = true;
                 refreshTail();
             } else {
                 card.classList.remove('fullscreen-log');
@@ -548,6 +567,7 @@
                 fsHeader.style.display = 'none';
                 document.body.style.overflow = '';
                 logIsFullscreen = false;
+                shouldScrollTailBottom = false;
                 refreshTail();
             }
         }
