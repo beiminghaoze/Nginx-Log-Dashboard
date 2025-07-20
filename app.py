@@ -70,19 +70,47 @@ def tail_log_file(filepath, lines=20):
     except Exception as e:
         return [f'Error reading file: {e}']
 
+def tail_log_file_since(filepath, since_hours=24):
+    """返回日志文件中最近 since_hours 小时内的所有内容（按时间过滤）"""
+    import re
+    from datetime import datetime, timedelta
+    LOG_PATTERN = r'([0-9a-fA-F:.]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)"'
+    now = datetime.now()
+    threshold = now - timedelta(hours=since_hours)
+    result = []
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for line in f:
+                match = re.match(LOG_PATTERN, line)
+                if match:
+                    ts = match.group(2)
+                    # ts 例: 30/Jun/2025:20:36:12 +0800
+                    try:
+                        dt = datetime.strptime(ts.split(' ')[0], '%d/%b/%Y:%H:%M:%S')
+                    except Exception:
+                        continue
+                    if dt >= threshold:
+                        result.append(line.rstrip('\n'))
+        return result[-1000:]  # 最多返回1000行，防止太多
+    except Exception as e:
+        return [f'Error reading file: {e}']
+
 @app.route('/api/tail')
 def api_tail():
     if REQUIRE_LOGIN and 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     prefix = request.args.get('file')
     lines = int(request.args.get('lines', 10))
+    since_hours = request.args.get('since_hours')
     from parser import get_logs_by_prefix
     files = get_logs_by_prefix(prefix)
     if not files:
         return jsonify({'lines': []})
-    # 只取最新的一个日志文件
     filepath = files[0]
-    log_lines = tail_log_file(filepath, lines)
+    if since_hours:
+        log_lines = tail_log_file_since(filepath, int(since_hours))
+    else:
+        log_lines = tail_log_file(filepath, lines)
     return jsonify({'lines': log_lines})
 
 if __name__ == '__main__':

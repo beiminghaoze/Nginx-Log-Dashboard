@@ -127,3 +127,6 @@ logs/
 # Temporary files
 tmp/
 temp/ 
+
+# nginx
+nginx/
