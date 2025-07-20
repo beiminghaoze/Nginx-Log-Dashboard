@@ -87,12 +87,12 @@ docker images | grep nginx-log-dashboard
 
 **基本运行命令：**
 ```bash
-docker run -d \
+sudo docker run -d \
   --name nginx-log-dashboard \
   --restart=always \
   -p 5000:5000 \
-  -v /var/log/nginx:/var/log/nginx/:ro \
-  -v /var/log/nginxs/test:/var/log/nginx/test:ro \
+  -v /var/log/nginx/nas:/var/log/nginx/nas:ro \
+  -v /var/log/nginx/nasqb:/var/log/nginx/nasqb:ro \
   nginx-log-dashboard
 ```
 
