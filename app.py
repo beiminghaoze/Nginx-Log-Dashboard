@@ -91,7 +91,7 @@ def tail_log_file_since(filepath, since_hours=24):
                         continue
                     if dt >= threshold:
                         result.append(line.rstrip('\n'))
-        return result[-1000:]  # 最多返回1000行，防止太多
+        return result[-10000:]  # 最多返回10000行，防止太多
     except Exception as e:
         return [f'Error reading file: {e}']
 

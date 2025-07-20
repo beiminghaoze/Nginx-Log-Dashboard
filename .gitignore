@@ -128,10 +128,7 @@ logs/
 tmp/
 temp/ 
 
-# nginx
-# 忽略 nginx/ 目录下的所有文件
-nginx/*
-# 保留 nginx/ 目录本身（防止被递归忽略）
+# 忽略 nginx/ 目录下所有内容（包括子目录）
+nginx/**
+# 保留 nginx/ 目录本身（通过占位文件）
 !nginx/.gitkeep
-# 忽略 nginx/*/*.1.log
-.1.gz
