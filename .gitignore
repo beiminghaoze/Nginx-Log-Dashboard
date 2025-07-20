@@ -129,4 +129,7 @@ tmp/
 temp/ 
 
 # nginx
-nginx/
+# 忽略 nginx/ 目录下的所有文件
+nginx/*
+# 保留 nginx/ 目录本身（防止被递归忽略）
+!nginx/.gitkeep
