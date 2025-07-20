@@ -4,16 +4,16 @@ from datetime import datetime, timedelta
 from glob import glob
 import os
 
-# # 定义日志目录映射
-# LOG_DIRS = {
-#     'nas': '/var/log/nginx/nas',
-#     'nasqb': '/var/log/nginx/nasqb'
-# }
-# 本地开发环境使用
+# 定义日志目录映射
 LOG_DIRS = {
-    'nas': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx/nas',
-    # 'nasqb': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx'
+    'nas': '/var/log/nginx/nas',
+    'nasqb': '/var/log/nginx/nasqb'
 }
+# # 本地开发环境使用
+# LOG_DIRS = {
+#     'nas': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx/nas',
+#     # 'nasqb': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx'
+# }
 
 # 定义日志格式的正则表达式，支持IPv4和IPv6
 LOG_PATTERN = r'([0-9a-fA-F:.]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)"'
