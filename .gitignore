@@ -132,3 +132,5 @@ temp/
 nginx/**
 # 保留 nginx/ 目录本身（通过占位文件）
 !nginx/.gitkeep
+# 忽略 *.1.gz
+*.1.gz
