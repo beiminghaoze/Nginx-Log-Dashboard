@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for, send_from_directory
 from parser import parse_logs, list_log_prefixes, get_logs_by_prefix
 import os
+from file_read_backwards import FileReadBackwards
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 app.secret_key = '6A737944E841BF3BDEB34F8CF9CD561E559'  # 改成你自己的密钥
@@ -71,27 +72,29 @@ def tail_log_file(filepath, lines=20):
         return [f'Error reading file: {e}']
 
 def tail_log_file_since(filepath, since_hours=24):
-    """返回日志文件中最近 since_hours 小时内的所有内容（按时间过滤）"""
+    """返回日志文件中最近 since_hours 小时内的所有内容（按时间过滤，倒序读取）"""
     import re
     from datetime import datetime, timedelta
-    LOG_PATTERN = r'([0-9a-fA-F:.]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)"'
-    now = datetime.now()
+    LOG_PATTERN = r'([^ ]+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)"'
+    now = datetime.now().astimezone()
     threshold = now - timedelta(hours=since_hours)
     result = []
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            for line in f:
+        with FileReadBackwards(filepath, encoding='utf-8') as frb:
+            for line in frb:
                 match = re.match(LOG_PATTERN, line)
-                if match:
-                    ts = match.group(2)
-                    # ts 例: 30/Jun/2025:20:36:12 +0800
-                    try:
-                        dt = datetime.strptime(ts.split(' ')[0], '%d/%b/%Y:%H:%M:%S')
-                    except Exception:
-                        continue
-                    if dt >= threshold:
-                        result.append(line.rstrip('\n'))
-        return result[-15000:]  # 最多返回15000行，防止太多
+                if not match:
+                    continue
+                ts = match.group(2)
+                try:
+                    dt = datetime.strptime(ts, '%d/%b/%Y:%H:%M:%S %z')
+                except Exception:
+                    continue
+                if dt >= threshold:
+                    result.append(line.rstrip('\n'))
+                else:
+                    break  # 前面的都更早，无需再查
+        return result[::-1][-10000:]  # 结果倒序，需反转
     except Exception as e:
         return [f'Error reading file: {e}']
 
