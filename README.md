@@ -77,10 +77,10 @@ docker-compose up -d
 
 ```bash
 # 构建镜像
-docker build -t nginx-log-dashboard .
+sudo docker build -t nginx-log-dashboard .
 
 # 查看构建的镜像
-docker images | grep nginx-log-dashboard
+sudo docker images | grep nginx-log-dashboard
 ```
 
 #### 2. 运行容器
