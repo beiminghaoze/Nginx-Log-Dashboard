@@ -566,6 +566,7 @@
                 document.body.style.overflow = 'hidden';
                 logIsFullscreen = true;
                 shouldScrollTailBottom = true;
+                stopAutoRefresh(); // 全屏时停止自动刷新
                 refreshTail();
             } else {
                 card.classList.remove('fullscreen-log');
@@ -574,6 +575,7 @@
                 document.body.style.overflow = '';
                 logIsFullscreen = false;
                 shouldScrollTailBottom = false;
+                startAutoRefresh(); // 退出全屏时恢复自动刷新
                 refreshTail();
             }
         }
