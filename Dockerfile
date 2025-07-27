@@ -13,7 +13,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 安装SSL相关依赖
-RUN apt-get update && apt-get install -y \
+RUN rm -f /etc/apt/sources.list.d/* && \
+    echo "deb https://mirrors.aliyun.com/debian/ bookworm main non-free non-free-firmware contrib" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.aliyun.com/debian-security/ bookworm-security main non-free non-free-firmware contrib" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.aliyun.com/debian/ bookworm-updates main non-free non-free-firmware contrib" >> /etc/apt/sources.list && \
+    apt-get clean && \
+    apt-get update && apt-get install -y \
     openssl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
