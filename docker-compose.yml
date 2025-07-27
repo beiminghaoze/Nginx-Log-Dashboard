@@ -11,6 +11,8 @@ services:
       - ./logs/nas:/var/log/nginx/nas:ro
       # 映射nasqb日志目录
       - ./logs/nasqb:/var/log/nginx/nasqb:ro
+      # 映射SSL证书文件
+      - ./certs:/app/certs:ro
     restart: unless-stopped
     environment:
       - TZ=Asia/Shanghai

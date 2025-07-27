@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request, session, redirect, u
 from parser import parse_logs, list_log_prefixes, get_logs_by_prefix
 import os
 from file_read_backwards import FileReadBackwards
+import ssl
 
 app = Flask(__name__, static_url_path='', static_folder='static')
 app.secret_key = '6A737944E841BF3BDEB34F8CF9CD561E559'  # 改成你自己的密钥
@@ -9,6 +10,11 @@ app.secret_key = '6A737944E841BF3BDEB34F8CF9CD561E559'  # 改成你自己的密�
 USERNAME = 'admin'
 PASSWORD = 'password'
 REQUIRE_LOGIN = False  # 是否需要登录的开关，True=需要，False=不需要
+
+# SSL证书配置
+SSL_CERT_PATH = '/app/certs/cert.pem'
+SSL_KEY_PATH = '/app/certs/key.pem'
+SSL_ENABLED = os.path.exists(SSL_CERT_PATH) and os.path.exists(SSL_KEY_PATH)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -35,6 +41,13 @@ def index():
         return redirect(url_for('login'))
     prefixes = list_log_prefixes()
     return render_template('index.html', prefixes=prefixes)
+
+@app.route('/http_redirect')
+def http_redirect():
+    """HTTP到HTTPS的自动跳转"""
+    if SSL_ENABLED and request.headers.get('X-Forwarded-Proto') == 'http':
+        return redirect(request.url.replace('http://', 'https://', 1), code=301)
+    return redirect(url_for('index'))
 
 @app.route('/api/stats')
 def stats():
@@ -117,4 +130,11 @@ def api_tail():
     return jsonify({'lines': log_lines})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    if SSL_ENABLED:
+        print(f"Starting with HTTPS on port 5000")
+        print(f"SSL Certificate: {SSL_CERT_PATH}")
+        print(f"SSL Key: {SSL_KEY_PATH}")
+        app.run(host='0.0.0.0', port=5000, ssl_context=(SSL_CERT_PATH, SSL_KEY_PATH))
+    else:
+        print("Starting with HTTP on port 5000 (SSL certificates not found)")
+        app.run(host='0.0.0.0', port=5000)

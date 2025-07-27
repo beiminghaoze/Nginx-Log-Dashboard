@@ -67,11 +67,16 @@ docker-compose up -d
 ```
 
 4. **访问应用**
-打开浏览器访问 http://localhost:5000
+打开浏览器访问 http://localhost:5000 或 https://localhost:5000
 
 默认登录信息：
 - 用户名：`admin`
 - 密码：`password`
+
+**HTTPS支持：**
+如需启用HTTPS，请将SSL证书文件放置在 `./certs/` 目录下：
+- `cert.pem` - SSL证书文件
+- `key.pem` - SSL私钥文件
 
 ## 📖 详细安装指南
 
@@ -97,6 +102,19 @@ sudo docker run -d \
   -p 5000:5000 \
   -v /var/log/nginx/nas:/var/log/nginx/nas:ro \
   -v /var/log/nginx/nasqb:/var/log/nginx/nasqb:ro \
+  -v ./certs:/app/certs:ro \
+  nginx-log-dashboard
+```
+
+**HTTPS运行命令：**
+```bash
+sudo docker run -d \
+  --name nginx-log-dashboard \
+  --restart=always \
+  -p 5000:5000 \
+  -v /var/log/nginx/nas:/var/log/nginx/nas:ro \
+  -v /var/log/nginx/nasqb:/var/log/nginx/nasqb:ro \
+  -v ./certs:/app/certs:ro \
   nginx-log-dashboard
 ```
 

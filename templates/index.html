@@ -514,8 +514,12 @@
                     ).join('');
                     if (shouldScrollTailBottom) {
                         const tailBox = document.getElementById('tailBox');
+                        const cardBody = document.getElementById('logCardBody');
                         if (tailBox.lastElementChild) {
-                            tailBox.lastElementChild.scrollIntoView({ behavior: 'auto', block: 'end' });
+                            // 使用 nearest 确保最后一行完全可见
+                            tailBox.lastElementChild.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+                            // 额外确保滚动到底部
+                            cardBody.scrollTop = cardBody.scrollHeight;
                         }
                         shouldScrollTailBottom = false;
                     }
