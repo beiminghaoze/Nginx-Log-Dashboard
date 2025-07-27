@@ -5,7 +5,7 @@ services:
     build: .
     container_name: nginx-log-dashboard
     ports:
-      - "5000:5000"
+      - "5000:5000"  # HTTPS端口
     volumes:
       # 映射nas日志目录
       - ./logs/nas:/var/log/nginx/nas:ro

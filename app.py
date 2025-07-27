@@ -11,55 +11,9 @@ app.secret_key = '6A737944E841BF3BDEB34F8CF9CD561E559'  # 改成你自己的密�
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 静态文件缓存1年
 app.config['TEMPLATES_AUTO_RELOAD'] = False  # 生产环境关闭模板自动重载
 
-@app.before_request
-def before_request():
-    """全局请求处理器：强制HTTPS"""
-    if SSL_ENABLED:
-        # 跳过静态文件，避免影响性能
-        if request.path.startswith('/static/') or request.path.startswith('/favicon.ico'):
-            return None
-            
-        # 调试信息
-        print(f"Request URL: {request.url}")
-        print(f"Request scheme: {request.environ.get('wsgi.url_scheme')}")
-        print(f"X-Forwarded-Proto: {request.headers.get('X-Forwarded-Proto')}")
-        print(f"X-Forwarded-Ssl: {request.headers.get('X-Forwarded-Ssl')}")
-        print(f"X-Forwarded-Scheme: {request.headers.get('X-Forwarded-Scheme')}")
-        
-        # 检查是否为HTTP请求 - 更直接的检测方法
-        is_http = False
-        
-        # 方法1: 检查代理头
-        if (request.headers.get('X-Forwarded-Proto') == 'http' or
-            request.headers.get('X-Forwarded-Ssl') == 'off' or
-            request.headers.get('X-Forwarded-Scheme') == 'http'):
-            is_http = True
-            print("HTTP detected via proxy headers")
-        
-        # 方法2: 检查wsgi环境变量
-        elif request.environ.get('wsgi.url_scheme') == 'http':
-            is_http = True
-            print("HTTP detected via wsgi.url_scheme")
-        
-        # 方法3: 检查请求URL本身
-        elif request.url.startswith('http://'):
-            is_http = True
-            print("HTTP detected via request URL")
-        
-        # 方法4: 检查Host头中的协议（如果有的话）
-        elif request.headers.get('Host') and 'http://' in request.headers.get('Host', ''):
-            is_http = True
-            print("HTTP detected via Host header")
-        
-        if is_http:
-            # 构建HTTPS URL
-            https_url = request.url.replace('http://', 'https://', 1)
-            if https_url == request.url:  # 如果没有替换，说明URL中没有协议
-                https_url = f"https://{request.host}{request.full_path}"
-            print(f"Redirecting HTTP to HTTPS: {request.url} -> {https_url}")
-            return redirect(https_url, code=301)
-        else:
-            print("No HTTP detection, continuing with request")
+
+
+
 
 USERNAME = 'admin'
 PASSWORD = 'password'
@@ -207,7 +161,7 @@ if __name__ == '__main__':
             print("SSL certificate validation successful")
             print("SSL performance optimizations applied")
             
-            # 使用优化的SSL上下文启动
+            # 使用优化的SSL上下文启动HTTPS服务器
             app.run(host='0.0.0.0', port=5000, ssl_context=context, threaded=True)
         except Exception as e:
             print(f"SSL certificate validation failed: {e}")

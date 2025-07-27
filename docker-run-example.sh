@@ -14,7 +14,7 @@ docker run -d \
   -v ./certs:/app/certs:ro \
   nginx-log-dashboard
 
-echo "容器已启动，访问 http://localhost:5000 或 https://localhost:5000 查看日志面板"
+echo "容器已启动，访问 https://localhost:5000 查看日志面板"
 echo ""
 echo "注意：请将 /path/to/your/nas/logs 和 /path/to/your/nasqb/logs 替换为实际的日志目录路径"
 echo ""

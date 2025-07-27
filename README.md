@@ -67,7 +67,7 @@ docker-compose up -d
 ```
 
 4. **访问应用**
-打开浏览器访问 http://localhost:5000 或 https://localhost:5000
+打开浏览器访问 https://localhost:5000
 
 默认登录信息：
 - 用户名：`admin`
@@ -77,6 +77,8 @@ docker-compose up -d
 如需启用HTTPS，请将SSL证书文件放置在 `./certs/` 目录下：
 - `cert.pem` - SSL证书文件
 - `key.pem` - SSL私钥文件
+
+**注意：** Flask开发服务器在启用HTTPS时只监听HTTPS端口，不支持同端口HTTP到HTTPS跳转。
 
 ## 📖 详细安装指南
 
@@ -488,6 +490,9 @@ pytest tests/
 5. 创建Pull Request
 
 ## 📝 更新日志
+### v1.0.2 (2025-7-27)
+- 🔍 添加HTTPS支持 详情请查看 HTTPS_PERFORMANCE.md
+
 ### v1.0.1 (2025-7-21)
 - 🔍 添加实时日志查看功能,目前返回至15000条或近24小时
 - 🚀 从此版本起取消登录页面

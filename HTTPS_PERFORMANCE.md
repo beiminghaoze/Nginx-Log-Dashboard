@@ -78,7 +78,13 @@ SSL performance optimizations applied
 
 ## 💡 使用建议
 
-1. **开发环境**：使用HTTP模式，速度更快
+1. **开发环境**：直接使用HTTPS，已优化性能
 2. **生产环境**：使用优化后的HTTPS模式
 3. **高并发场景**：考虑使用Gunicorn + Nginx
-4. **移动端访问**：HTTPS优化对移动设备特别重要 
+4. **移动端访问**：HTTPS优化对移动设备特别重要
+
+## 🎯 访问方式
+
+- **HTTPS访问**：`https://your-domain:5000`
+- **证书配置**：将SSL证书文件放置在 `./certs/` 目录下
+- **自动检测**：应用会自动检测证书并启用HTTPS 
