@@ -490,6 +490,9 @@ pytest tests/
 5. 创建Pull Request
 
 ## 📝 更新日志
+### v1.0.3 (2025-8-2)
+- 📊 优化移动端显示
+
 ### v1.0.2 (2025-7-27)
 - 🔍 添加HTTPS支持 详情请查看 HTTPS_PERFORMANCE.md
 
