@@ -1,0 +1,72 @@
+name: Docker Image CI/CD (GHCR)
+
+# 触发工作流的事件
+on:
+  # 当代码推送到 main 分支时触发
+  push:
+    branches: [ "main" ]
+    tags-ignore: [ '*' ]
+  # 当创建一个新的 release (release 或 pre-release) 时触发
+  release:
+    types: [ created ]
+  # 允许手动触发
+  workflow_dispatch:
+
+# 全局环境变量
+env:
+  REGISTRY: ghcr.io # 🚀 更改为 GitHub 容器注册表
+  IMAGE_NAME: ${{ github.repository }} # 镜像名称 (格式: 拥有者/仓库名)
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    # 🚨 关键：推送到 ghcr.io 必须拥有 packages: write 权限
+    permissions:
+      contents: read
+      packages: write 
+
+    steps:
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up QEMU
+        # 启用多架构构建支持
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🛠️ Set up Docker Buildx
+        # 设置 Buildx 实例
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔑 Login to ghcr.io
+        # 🚀 登录到 ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # 使用 github.actor 作为用户名 (通常是仓库拥有者)
+          username: ${{ github.actor }}
+          # 使用内置的 GITHUB_TOKEN 作为密码
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Extract Docker metadata (tags and labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # ghcr.io 路径格式: ghcr.io/拥有者/仓库名
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # 如果是 release，使用 release tag 作为版本号 (例如: v1.0.0)
+            type=ref,event=tag
+            # 如果是 main 分支 push，使用 latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: 🔨 Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64 # 定义要构建的架构列表
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
