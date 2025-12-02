@@ -49,6 +49,7 @@
 ## 🚀 快速开始
 
 ### 使用Docker Compose（推荐）
+你可以通过 [ghcr.io](https://ghcr.io/beiminghaoze/nginx-log-dashboard) 来获取编译好的适用于 linux/arm64 及linux/amd64 的docker镜像
 
 1. **克隆项目**
 ```bash
