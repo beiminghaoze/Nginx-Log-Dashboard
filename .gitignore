@@ -134,3 +134,7 @@ nginx/**
 !nginx/.gitkeep
 # 忽略 *.1.gz
 *.1.gz
+
+# claude
+CLAUDE.md
+.claude

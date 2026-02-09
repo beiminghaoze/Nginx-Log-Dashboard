@@ -11,7 +11,7 @@ LOG_DIRS = {
 }
 # # 本地开发环境使用
 # LOG_DIRS = {
-#     'nas': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx/nas',
+#     'nas': 'D:/MyProject/Nginx-Log-Dashboard/nginx/nas',
 #     # 'nasqb': 'C:/Users/beiming/PycharmProjects/nginx-log-dashboard/nginx'
 # }
 

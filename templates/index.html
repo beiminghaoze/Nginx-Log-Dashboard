@@ -145,11 +145,17 @@
                 height: 80px !important;
                 max-height: 80px !important;
             }
-            
+
             /* 移动端全屏按钮 */
             #fullscreenLogBtn {
                 padding: 6px 10px;
                 font-size: 0.9rem;
+            }
+            /* 移动端状态码样式调整 */
+            .log-status {
+                margin-left: 6px;
+                padding: 1px 4px;
+                font-size: 0.8em;
             }
         }
         
@@ -241,6 +247,49 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        /* 日志内容和状态码容器 - 使用flex布局 */
+        .log-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        /* 日志内容区域 - 允许省略 */
+        .log-content {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0; /* 重要：允许flex item收缩 */
+        }
+        /* 状态码 - 始终显示在右侧 */
+        .log-status {
+            flex-shrink: 0;
+            margin-left: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        /* 2xx 成功 */
+        .log-status[data-status^="2"] {
+            background: #28a745;
+            color: white;
+        }
+        /* 3xx 重定向 */
+        .log-status[data-status^="3"] {
+            background: #17a2b8;
+            color: white;
+        }
+        /* 4xx 客户端错误 */
+        .log-status[data-status^="4"] {
+            background: #ffc107;
+            color: #000;
+        }
+        /* 5xx 服务器错误 */
+        .log-status[data-status^="5"] {
+            background: #dc3545;
+            color: white;
         }
         .fullscreen-log {
             position: fixed !important;
@@ -343,9 +392,8 @@
             padding: 2px 6px 8px 6px !important;
             font-size: 1.08rem !important;
             line-height: 1.2 !important;
-            /* 允许滚动但隐藏滚动条 */
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
+            /* 禁止滚动 */
+            overflow: hidden !important;
         }
         #logCard:not(.fullscreen-log) #tailBox {
             font-size: 1.08rem !important;
@@ -357,15 +405,6 @@
             line-height: 1.2 !important;
             margin-bottom: 0 !important;
             padding: 1px 0 !important;
-        }
-        
-        /* 隐藏非全屏模式的滚动条 */
-        #logCard:not(.fullscreen-log) .card-body::-webkit-scrollbar {
-            display: none;
-        }
-        #logCard:not(.fullscreen-log) .card-body {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
         }
     </style>
 </head>
@@ -711,9 +750,20 @@
                 .then(res => res.json())
                 .then(data => {
                     const linesArr = (data.lines || []);
-                    document.getElementById('tailBox').innerHTML = linesArr.map(line =>
-                        `<div class='log-line' title="${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
-                    ).join('');
+                    document.getElementById('tailBox').innerHTML = linesArr.map(line => {
+                        // 解析状态码 - 匹配 Nginx 日志格式
+                        const statusMatch = line.match(/"\s+(\d{3})\s+/);
+                        const statusCode = statusMatch ? statusMatch[1] : '';
+                        const escapedLine = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+                        if (statusCode) {
+                            // 所有模式下都分离状态码显示
+                            return `<div class='log-line' title="${escapedLine}"><span class='log-content'>${escapedLine}</span><span class='log-status' data-status="${statusCode}">${statusCode}</span></div>`;
+                        } else {
+                            // 无法解析状态码时，保持原样
+                            return `<div class='log-line' title="${escapedLine}">${escapedLine}</div>`;
+                        }
+                    }).join('');
                     // 无论是否全屏，都滚动到底部显示最新日志
                     const cardBody = document.getElementById('logCardBody');
                     
