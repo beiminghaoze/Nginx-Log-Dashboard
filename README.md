@@ -1,4 +1,4 @@
-# Nginx Log Dashboard
+# Nginx Log Dashboard（目前已暂停支持）
 
 一个功能强大的Nginx日志分析Web仪表板，支持多日志源、实时监控和统计分析。
 
